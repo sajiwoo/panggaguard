@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration debug="false" info="false">
+    <statusListener class="ch.qos.logback.core.status.NopStatusListener" />
+
+    <property name="LOG_DIRECTORY" value="tmp/var/log/panggaguard/api/" />
+    <springProperty scope="context" name="LOG_DIRECTORY" source="storage.log-dir"/>
+
+    <springProfile name="developmentlocal">
+        <property name="LOG_DIRECTORY" value="tmp/var/log/panggaguard/api/" />
+        <springProperty scope="context" name="LOG_DIRECTORY" source="storage.log-dir"/>
+    </springProfile>
+
+    <springProfile name="development">
+        <property name="LOG_DIRECTORY" value="/var/log/panggaguard/api/" />
+        <springProperty scope="context" name="LOG_DIRECTORY" source="storage.log-dir"/>
+    </springProfile>
+
+    <springProfile name="production">
+        <property name="LOG_DIRECTORY" value="/var/log/panggaguard/api" />
+        <springProperty scope="context" name="LOG_DIRECTORY" source="storage.log-dir"/>
+    </springProfile>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSSSS} [Thread : %thread] [trace-id : %X{traceId}, span-id : %X{spanId}] - %-5level %logger - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+
+    <appender name="APPENDER_ACCESS" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_DIRECTORY}/access.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_DIRECTORY}/%d{yyyy-MM,aux}/access.%d{yyyy-MM-dd-HH}.log.gz</fileNamePattern>
+        </rollingPolicy>
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+                <timestamp />
+                <logLevel />
+                <context />
+                <threadName />
+                <pattern>
+                    <pattern>
+                        {
+                        "log_type" : "ACCESS",
+                        "trace_id" : "%X{traceId}",
+                        "span_id" : "%X{spanId}"
+                        }
+                    </pattern>
+                    
+                </pattern>
+                <nestedField>
+                    <fieldName>data</fieldName>
+                    <!-- <message /> -->
+                    <providers>
+                        <provider
+                            class="dev.sajiwo.panggaguard.customization.CustomMessageJsonProvider" />
+                    </providers>
+                </nestedField>
+            </providers>
+        </encoder>
+    </appender>
+
+    <appender name="APPENDER_ACCESS_ASYNC" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="APPENDER_ACCESS" />
+        <discardingThreshold>0</discardingThreshold>
+        <queueSize>256</queueSize>
+        <neverBlock>true</neverBlock>
+    </appender>
+
+    <appender name="APPENDER_MSGS" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <includeCallerData>false</includeCallerData>
+            <providers>
+                <timestamp />
+                <logLevel />
+                <context />
+                <threadName />
+                <pattern>
+                    <pattern>
+                        {
+                        "log_type" : "MSGS",
+                        "trace_id" : "%X{traceId}",
+                        "span_id" : "%X{spanId}"
+                        }
+                    </pattern>
+                </pattern>
+                <nestedField>
+                    <fieldName>data</fieldName>
+                    <!-- <message /> -->
+                    <providers>
+                        <provider
+                            class="dev.sajiwo.panggaguard.customization.CustomMessageJsonProvider" />
+                    </providers>
+                </nestedField>
+            </providers>
+        </encoder>
+    </appender>
+
+    <appender name="APPENDER_MSGS_ASYNC" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="APPENDER_MSGS" />
+        <discardingThreshold>0</discardingThreshold>
+        <queueSize>256</queueSize>
+        <neverBlock>true</neverBlock>
+    </appender>
+
+    <appender name="APPENDER_DEFAULT" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_DIRECTORY}/default.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_DIRECTORY}/%d{yyyy-MM,aux}/default.%d{yyyy-MM-dd-HH}.log.gz</fileNamePattern>
+        </rollingPolicy>
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+                <timestamp />
+                <logLevel />
+                <context />
+                <threadName />
+                <pattern>
+                    <pattern>
+                        {
+                        "log_type" : "DEFAULT",
+                        "trace_id" : "%X{traceId}",
+                        "span_id" : "%X{spanId}"
+                        }
+                    </pattern>
+                    
+                </pattern>
+                <nestedField>
+                    <fieldName>data</fieldName>
+                    <!-- <message /> -->
+                    <providers>
+                        <provider
+                            class="dev.sajiwo.panggaguard.customization.CustomMessageJsonProvider" />
+                    </providers>
+                </nestedField>
+            </providers>
+        </encoder>
+    </appender>
+
+    <appender name="APPENDER_DEFAULT_ASYNC" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="APPENDER_DEFAULT" />
+        <discardingThreshold>0</discardingThreshold>
+        <queueSize>256</queueSize>
+        <neverBlock>true</neverBlock>
+    </appender>
+
+    <logger name="access" level="INFO" additivity="false">
+        <appender-ref ref="APPENDER_ACCESS_ASYNC" />
+    </logger>
+
+    <logger name="msgs" level="INFO" additivity="false">
+        <appender-ref ref="APPENDER_MSGS_ASYNC" />
+    </logger>
+
+    <logger name="default" level="INFO" additivity="false">
+        <appender-ref ref="APPENDER_DEFAULT_ASYNC" />
+    </logger>
+
+    <logger name="dev.sajiwo.panggaguard.filter.AccessLoggingFilter"
+        level="INFO"
+        additivity="false">
+        <appender-ref ref="APPENDER_ACCESS_ASYNC" />
+    </logger>
+
+    <logger name="org.springframework.web.filter.CommonsRequestLoggingFilter" level="DEBUG"
+        additivity="false">
+        <appender-ref ref="STDOUT" />
+    </logger>
+
+    <root level="INFO">
+        <appender-ref ref="APPENDER_DEFAULT_ASYNC" />
+    </root>
+
+</configuration>

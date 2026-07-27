@@ -1,0 +1,32 @@
+server:
+  port: 8080
+spring:
+  application:
+    name: panggaguard
+  webflux:
+    problemdetails:
+      enabled: true
+  reactor:
+    context-propagation: auto
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            provider: google
+            client-id: ${client-id}
+            client-secret: ${client-secret}
+            scope: openid, email, profile
+  datasource:
+    url: ${datasource-url}
+    username: ${datasource-username}
+    password: ${datasource-password}
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    generate-ddl: true
+    hibernate:
+      ddl-auto: update
+add-config:
+  cors:
+    enabled: true
+    allow-origins: "http://localhost:3000"
