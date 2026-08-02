@@ -36,6 +36,7 @@ dependencies {
     implementation("net.logstash.logback:logstash-logback-encoder:7.0")
     // implementation("io.micrometer:micrometer-registry-prometheus")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("org.springframework.boot:spring-boot-starter-mail")
     implementation("org.springframework.boot:spring-boot-starter-security-oauth2-client")
     implementation("org.springframework.cloud:spring-cloud-starter-gateway-server-webflux")
     implementation("io.jsonwebtoken:jjwt-api:0.13.0")

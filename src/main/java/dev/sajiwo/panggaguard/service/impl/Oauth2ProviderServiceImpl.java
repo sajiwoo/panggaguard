@@ -2,6 +2,7 @@ package dev.sajiwo.panggaguard.service.impl;
 
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -46,6 +47,7 @@ public class Oauth2ProviderServiceImpl implements Oauth2ProviderService {
       newUser = userRepository.save(newUser);
 
       UserActivity newActivity = new UserActivity();
+      newActivity.setId(UUID.randomUUID().toString());
       newActivity.setUserId(newUser.getId().toString());
       newActivity.setType("first time sigin with " + attrs.getOrDefault("iss", ""));
       newActivity.setCreatedAt(LocalDateTime.now());

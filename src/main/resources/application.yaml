@@ -21,11 +21,6 @@ spring:
     url: ${datasource-url}
     username: ${datasource-username}
     password: ${datasource-password}
-  jpa:
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
-    generate-ddl: true
-    hibernate:
-      ddl-auto: update
 add-config:
   cors:
     enabled: true

@@ -25,7 +25,7 @@ import dev.sajiwo.panggaguard.repository.UserActivityRepository;
 @EnableReactiveMethodSecurity
 public class SecurityConfig {
 
-  @Value("${add-config.cors.allow-origins:http://localhost:3000}")
+  @Value("${add-config.cors.allow-origins}")
   private String origins;
 
   @Bean

@@ -12,6 +12,10 @@ public abstract class DataResponses {
     return success(HttpStatus.CREATED, data);
   }
 
+  public static DataResponse<Void> ok() {
+    return success(HttpStatus.OK, null);
+  }
+
   public static <T> DataResponse<T> ok(T data) {
     return success(HttpStatus.OK, data);
   }

@@ -161,11 +161,6 @@
         <appender-ref ref="APPENDER_ACCESS_ASYNC" />
     </logger>
 
-    <logger name="org.springframework.web.filter.CommonsRequestLoggingFilter" level="DEBUG"
-        additivity="false">
-        <appender-ref ref="STDOUT" />
-    </logger>
-
     <root level="INFO">
         <appender-ref ref="APPENDER_DEFAULT_ASYNC" />
     </root>

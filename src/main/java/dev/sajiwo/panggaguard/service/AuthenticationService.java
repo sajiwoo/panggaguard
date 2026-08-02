@@ -8,6 +8,8 @@ import reactor.core.publisher.Mono;
 
 public interface AuthenticationService {
 
+  Mono<ResponseEntity<DataResponse<?>>> signInMethod();
+
   Mono<ResponseEntity<DataResponse<?>>> signIn(SignInRequest request);
 
   Mono<ResponseEntity<DataResponse<?>>> signOut();

@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.reactive.resource.NoResourceFoundException;
 import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.server.ServerWebInputException;
 
 import dev.sajiwo.panggaguard.dto.response.DataResponse;
 import dev.sajiwo.panggaguard.utilities.DataResponses;
@@ -35,6 +36,11 @@ public class GlobalReactiveExceptionHandler {
         exception.getMessage());
     response.setTraceId(TraceContextAccessor.getCurrentTraceId());
     return Mono.just(ResponseEntity.status(exception.getStatusCode()).body(response));
+  }
+
+  @ExceptionHandler(ServerWebInputException.class)
+  public Mono<ResponseEntity<?>> handleServerWebInputException(ServerWebInputException ex, ServerWebExchange exchange) {
+    return Mono.just(ResponseEntity.badRequest().build());
   }
 
   @ExceptionHandler(Exception.class)

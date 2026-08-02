@@ -1,7 +1,9 @@
 package dev.sajiwo.panggaguard.service.impl;
 
+import java.util.Arrays;
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -11,6 +13,8 @@ import org.springframework.stereotype.Service;
 import dev.sajiwo.panggaguard.dto.JsonWebToken;
 import dev.sajiwo.panggaguard.dto.request.SignInRequest;
 import dev.sajiwo.panggaguard.dto.response.DataResponse;
+import dev.sajiwo.panggaguard.dto.response.SignInMethodResponse;
+import dev.sajiwo.panggaguard.dto.response.SignInResponse;
 import dev.sajiwo.panggaguard.entity.User;
 import dev.sajiwo.panggaguard.entity.UserActivity;
 import dev.sajiwo.panggaguard.exception.ErrorResponseException;
@@ -29,10 +33,21 @@ import reactor.core.scheduler.Schedulers;
 @Service
 public class JwtAuthenticationService implements AuthenticationService {
 
+  @Value("${add-config.application.domain}")
+  private String AppDomain;
+
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
   private final JwtService jwtService;
   private final UserActivityRepository activityRepository;
+
+  @Override
+  public Mono<ResponseEntity<DataResponse<?>>> signInMethod() {
+    SignInMethodResponse google = new SignInMethodResponse("google", "", AppDomain + "/oauth2/authorization/google");
+    return Mono.just(Arrays.asList(google))
+        .map(DataResponses::ok)
+        .map(ResponseEntity::ok);
+  }
 
   @Override
   public Mono<ResponseEntity<DataResponse<?>>> signIn(SignInRequest request) {
@@ -57,6 +72,7 @@ public class JwtAuthenticationService implements AuthenticationService {
 
           return Mono.just(jwt);
         })
+        .map(jwt -> new SignInResponse(jwt.getBearerToken(), jwt.getRefreshToken()))
         .map(DataResponses::ok)
         .map(ResponseEntity::ok);
   }

@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import dev.sajiwo.panggaguard.dto.request.ForgotPassword;
+import dev.sajiwo.panggaguard.dto.request.ResetPasswordRequest;
 import dev.sajiwo.panggaguard.dto.request.SignInRequest;
 import dev.sajiwo.panggaguard.dto.request.SignUpRequest;
 import dev.sajiwo.panggaguard.dto.response.DataResponse;
@@ -27,7 +29,7 @@ public class AuthController {
 
   @GetMapping(path = "/sign-in/method")
   public Mono<ResponseEntity<DataResponse<?>>> signInMethod() {
-    return Mono.just(ResponseEntity.ok(new DataResponse<>("/google")));
+    return authenticationService.signInMethod();
   }
 
   @PostMapping(path = "/sign-in")
@@ -43,6 +45,16 @@ public class AuthController {
   @PostMapping(path = "/sing-out")
   public Mono<ResponseEntity<DataResponse<?>>> signOut(Authentication authentication) {
     return authenticationService.signOut();
+  }
+
+  @PostMapping(path = "/forgot-password")
+  public Mono<ResponseEntity<DataResponse<?>>> forgotPasswordRequest(@RequestBody ForgotPassword request) {
+    return userService.forgotPassword(request);
+  }
+
+  @PostMapping(path = "/reset-password")
+  public Mono<ResponseEntity<DataResponse<?>>> resetPassword(@RequestBody ResetPasswordRequest request) {
+    return userService.resetPassword(request);
   }
 
 }

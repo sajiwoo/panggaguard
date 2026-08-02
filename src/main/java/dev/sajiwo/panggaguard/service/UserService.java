@@ -2,6 +2,8 @@ package dev.sajiwo.panggaguard.service;
 
 import org.springframework.http.ResponseEntity;
 
+import dev.sajiwo.panggaguard.dto.request.ForgotPassword;
+import dev.sajiwo.panggaguard.dto.request.ResetPasswordRequest;
 import dev.sajiwo.panggaguard.dto.request.SignUpRequest;
 import dev.sajiwo.panggaguard.dto.response.DataResponse;
 import reactor.core.publisher.Mono;
@@ -10,4 +12,7 @@ public interface UserService {
 
   Mono<ResponseEntity<DataResponse<?>>> signUp(SignUpRequest request);
 
+  Mono<ResponseEntity<DataResponse<?>>> forgotPassword(ForgotPassword request);
+
+  Mono<ResponseEntity<DataResponse<?>>> resetPassword(ResetPasswordRequest request);
 }
