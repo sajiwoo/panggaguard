@@ -1,0 +1,20 @@
+services:
+  panggaguard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: panggaguard-app
+    networks:
+      - sajiwo-cluster
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./tmp/config:/app/config:z
+    environment:
+      - JAVA_OPTS=-Xmx512m -Xms256m # Example: set JVM memory limits
+      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_CONFIG_ADDITIONAL_LOCATION=file:/app/config/
+    restart: unless-stopped
+networks:
+  sajiwo-cluster:
+    external: true
