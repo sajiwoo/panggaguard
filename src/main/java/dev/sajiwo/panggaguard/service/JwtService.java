@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import javax.crypto.SecretKey;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
@@ -19,16 +20,19 @@ import io.jsonwebtoken.security.Keys;
 @Service
 public class JwtService {
 
-  private final String secret = "supersecretkeythatsisverylongandsecureatleast256bits";
   private final SecretKey key;
+  private final long expiryTimeHours;
 
-  public JwtService() {
+  public JwtService(
+      @Value("${add-config.token.jwt.secret}") String secret,
+      @Value("${add-config.token.jwt.expiry-time-h}") long expiryTimeHours) {
     this.key = Keys.hmacShaKeyFor(secret.getBytes());
+    this.expiryTimeHours = expiryTimeHours;
   }
 
   public JsonWebToken generateToken(User user) {
     Map<String, Object> claims = new HashMap<>();
-    claims.put("email", user.getEmail());
+    claims.put("role", user.getRole());
     String jti = UUID.randomUUID().toString();
 
     String token = Jwts.builder()
@@ -36,7 +40,7 @@ public class JwtService {
         .subject(user.getFirstName())
         .claims(claims)
         .issuedAt(new Date(System.currentTimeMillis()))
-        .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24)) // 24 hours
+        .expiration(new Date(System.currentTimeMillis() + 1000L * 60 * 60 * expiryTimeHours))
         .signWith(key)
         .compact();
 
@@ -55,7 +59,7 @@ public class JwtService {
         .subject(oAuth2User.getName())
         .claims(claims)
         .issuedAt(new Date(System.currentTimeMillis()))
-        .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24)) // 24 hours
+        .expiration(new Date(System.currentTimeMillis() + 1000L * 60 * 60 * expiryTimeHours))
         .signWith(key)
         .compact();
   }
@@ -68,6 +72,15 @@ public class JwtService {
         .getPayload();
   }
 
+  public String extractTokenId(String token) {
+    Claims claims = Jwts.parser()
+        .verifyWith(key)
+        .build()
+        .parseSignedClaims(token)
+        .getPayload();
+    return claims.get("jti").toString();
+  }
+
   public String extractUsername(String token) {
     return Jwts.parser()
         .verifyWith(key)
@@ -76,4 +89,5 @@ public class JwtService {
         .getPayload()
         .getSubject();
   }
+
 }

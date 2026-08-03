@@ -20,10 +20,16 @@ public class Route extends AuditEntity<String, LocalDateTime> {
   @Column(name = "ROUTE_ID")
   private UUID id;
 
-  @Column(name = "DOMAIN", unique = true)
+  @Column(name = "DOMAIN")
   private String domain;
 
   @Column(name = "URI")
   private String uri;
+
+  @Column(name = "URI_TYPE")
+  private String uriType;
+
+  @Column(name = "DOMAIN_ROLE")
+  private String domainRole;
 
 }

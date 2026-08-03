@@ -22,6 +22,15 @@ spring:
     username: ${datasource-username}
     password: ${datasource-password}
 add-config:
+  token:
+    jwt:
+      expiry-time-h: ${jwt-expiry-time-h}
+      secret: ${jwt-secret}
+  application:
+    domain: ${application-domain}
+  authenticated:
+    user:
+      url-redirection: ${authenticated-user-url-redirection}
   cors:
     enabled: true
     allow-origins: "http://localhost:3000"

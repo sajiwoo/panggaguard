@@ -35,14 +35,14 @@ public class SecurityConfig {
     LogoutHandler logoutHandler = new LogoutHandler(activityRepository);
 
     http.logout(logout -> logout
-        .requiresLogout(ServerWebExchangeMatchers.pathMatchers(HttpMethod.POST, "/sign-out"))
+        .requiresLogout(ServerWebExchangeMatchers.pathMatchers(HttpMethod.POST, "/auth/sign-out"))
         .logoutHandler(logoutHandler)
         .logoutSuccessHandler(logoutHandler));
 
     http.cors(cors -> cors.configurationSource(corsConfigurationSource()));
 
     http.authorizeExchange(
-        authz -> authz.pathMatchers("/auth/**", "/oauth2/**", "/ping/public").permitAll().anyExchange()
+        authz -> authz.pathMatchers("/auth/**", "/oauth2/**", "/ping/public", "/public/**").permitAll().anyExchange()
             .authenticated());
 
     http.exceptionHandling(ex -> ex

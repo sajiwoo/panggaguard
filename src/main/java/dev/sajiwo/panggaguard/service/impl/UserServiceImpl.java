@@ -1,25 +1,34 @@
 package dev.sajiwo.panggaguard.service.impl;
 
+import java.net.URI;
+import java.time.Duration;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import dev.sajiwo.panggaguard.dto.request.ForgotPassword;
 import dev.sajiwo.panggaguard.dto.request.ResetPasswordRequest;
 import dev.sajiwo.panggaguard.dto.request.SignUpRequest;
 import dev.sajiwo.panggaguard.dto.response.DataResponse;
+import dev.sajiwo.panggaguard.entity.Route;
 import dev.sajiwo.panggaguard.entity.User;
 import dev.sajiwo.panggaguard.entity.UserActivity;
 import dev.sajiwo.panggaguard.enumeration.Mailing;
 import dev.sajiwo.panggaguard.exception.ErrorResponseException;
 import dev.sajiwo.panggaguard.mapper.UserMapper;
+import dev.sajiwo.panggaguard.repository.RouteRepository;
 import dev.sajiwo.panggaguard.repository.UserActivityRepository;
 import dev.sajiwo.panggaguard.repository.UserRepository;
 import dev.sajiwo.panggaguard.service.EmailService;
+import dev.sajiwo.panggaguard.service.JwtService;
 import dev.sajiwo.panggaguard.service.OtpService;
 import dev.sajiwo.panggaguard.service.UserService;
 import dev.sajiwo.panggaguard.utilities.DataResponses;
@@ -37,6 +46,8 @@ public class UserServiceImpl implements UserService {
   private final PasswordEncoder passwordEncoder;
   private final EmailService emailService;
   private final OtpService otpService;
+  private final JwtService jwtService;
+  private final RouteRepository routeRepository;
 
   @Override
   public Mono<ResponseEntity<DataResponse<?>>> signUp(SignUpRequest request) {
@@ -99,6 +110,43 @@ public class UserServiceImpl implements UserService {
               });
         })
         .map(ResponseEntity::ok);
+  }
+
+  @Override
+  public Mono<ResponseEntity<Void>> signInWithOauth2Provider(String provider, String domain, String role,
+      String token) {
+
+    if (StringUtils.hasText(token)) {
+      try {
+        jwtService.decode(token);
+        Optional<Route> home = routeRepository.findUserAuthUrlRedirection(domain, role);
+        if (home.isEmpty()) {
+          return Mono.just(ResponseEntity.status(HttpStatus.FOUND).location(URI.create("https://google.com")).build());
+        }
+
+        return Mono.just(ResponseEntity.status(HttpStatus.FOUND).location(URI.create(home.get().getUri())).build());
+
+      } catch (Exception e) {
+      }
+    }
+
+    ResponseCookie roleCookie = ResponseCookie
+        .from("x_role", role)
+        .path("/")
+        .maxAge(Duration.ofMinutes(5))
+        .build();
+
+    ResponseCookie routeCookie = ResponseCookie
+        .from("x_target_domain", domain)
+        .path("/")
+        .maxAge(Duration.ofMinutes(5))
+        .build();
+
+    return Mono.just(ResponseEntity.status(HttpStatus.FOUND)
+        .location(URI.create("/oauth2/authorization/" + provider))
+        .header(HttpHeaders.SET_COOKIE, roleCookie.toString())
+        .header(HttpHeaders.SET_COOKIE, routeCookie.toString())
+        .build());
   }
 
 }

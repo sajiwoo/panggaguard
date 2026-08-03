@@ -1,29 +1,32 @@
 create table routes (
   route_id uuid default gen_random_uuid () not null,
-  "domain" varchar(255) null,
-  uri varchar(255) null,
+  "domain" varchar(255) not null,
+  domain_role varchar(55),
+  uri varchar(255) not null,
+  uri_type varchar(55) not null default 'api',
   created_at timestamp not null default current_timestamp,
-  created_by varchar(255) null,
-  updated_at timestamp null,
-  updated_by varchar(255) null,
-  deleted_at timestamp null,
-  deleted_by varchar(255) null,
-  constraint pk_routes primary key (route_id)
+  created_by varchar(255),
+  updated_at timestamp,
+  updated_by varchar(255),
+  deleted_at timestamp,
+  deleted_by varchar(255),
+  constraint pk_routes primary key (route_id),
+  constraint uq_domain_uri_uri_type unique (domain, domain_role, uri, uri_type)
 );
 
 create table users (
   user_id uuid default gen_random_uuid () not null,
   first_name varchar(255) not null,
-  last_name varchar(255) null,
+  last_name varchar(255),
   email varchar(255) not null,
   "password" varchar(255) not null,
   "role" varchar(255) not null,
   created_at timestamp not null default current_timestamp,
-  created_by varchar(255) null,
-  updated_at timestamp null,
-  updated_by varchar(255) null,
-  deleted_at timestamp null,
-  deleted_by varchar(255) null,
+  created_by varchar(255),
+  updated_at timestamp,
+  updated_by varchar(255),
+  deleted_at timestamp,
+  deleted_by varchar(255),
   constraint pk_users primary key (user_id)
 );
 
@@ -31,14 +34,15 @@ create table user_activities (
   user_activities_id varchar(255) default gen_random_uuid () not null,
   is_valid bool not null,
   user_id varchar(255) not null,
-  "type" varchar(255) null,
-  platform varchar(255) null,
+  "type" varchar(255),
+  platform varchar(255),
+  oauth2_token varchar(255),
   created_at timestamp not null default current_timestamp,
-  created_by varchar(255) null,
-  updated_at timestamp null,
-  updated_by varchar(255) null,
-  deleted_at timestamp null,
-  deleted_by varchar(255) null,
+  created_by varchar(255),
+  updated_at timestamp,
+  updated_by varchar(255),
+  deleted_at timestamp,
+  deleted_by varchar(255),
   constraint pk_user_activities primary key (user_activities_id)
 );
 
@@ -48,11 +52,11 @@ create table mailing (
   sender varchar(55) not null,
   message text not null,
   created_at timestamp not null default current_timestamp,
-  created_by varchar(255) null,
-  updated_at timestamp null,
-  updated_by varchar(255) null,
-  deleted_at timestamp null,
-  deleted_by varchar(255) null,
+  created_by varchar(255),
+  updated_at timestamp,
+  updated_by varchar(255),
+  deleted_at timestamp,
+  deleted_by varchar(255),
   constraint pk_mailing primary key (mailing_id)
 );
 
@@ -62,11 +66,11 @@ create table otp (
   reference varchar(55),
   is_valid boolean not null default true,
   created_at timestamp not null default current_timestamp,
-  created_by varchar(255) null,
-  updated_at timestamp null,
-  updated_by varchar(255) null,
-  deleted_at timestamp null,
-  deleted_by varchar(255) null,
+  created_by varchar(255),
+  updated_at timestamp,
+  updated_by varchar(255),
+  deleted_at timestamp,
+  deleted_by varchar(255),
   constraint pk_otp primary key (token)
 );
 

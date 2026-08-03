@@ -31,4 +31,7 @@ public class UserActivity extends AuditEntity<String, LocalDateTime> {
   @Column(name = "PLATFORM")
   private String platform;
 
+  @Column(name = "OAUTH2_TOKEN")
+  private String oatuh2Token;
+
 }

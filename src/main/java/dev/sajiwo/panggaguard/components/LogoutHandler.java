@@ -1,6 +1,7 @@
 package dev.sajiwo.panggaguard.components;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.server.WebFilterExchange;
@@ -30,6 +31,18 @@ public class LogoutHandler implements ServerLogoutHandler, ServerLogoutSuccessHa
   @Override
   public Mono<Void> onLogoutSuccess(WebFilterExchange exchange, Authentication authentication) {
     ServerHttpResponse response = exchange.getExchange().getResponse();
+    org.springframework.http.server.reactive.ServerHttpRequest request = exchange.getExchange().getRequest();
+
+    request.getCookies().keySet().forEach(cookieName -> {
+      ResponseCookie cookieToDelete = ResponseCookie
+          .from(cookieName, "")
+          .path("/")
+          .maxAge(0)
+          .build();
+
+      response.addCookie(cookieToDelete);
+    });
+
     response.setStatusCode(HttpStatus.OK);
 
     return Mono.empty();

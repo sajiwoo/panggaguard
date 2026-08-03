@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.Optional;
 
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -35,14 +36,23 @@ public class JwtReactiveFilter implements WebFilter {
 
   @Override
   public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
+    String token = null;
     String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 
-    if (!StringUtils.hasText(authHeader) || !authHeader.startsWith("Bearer ")) {
+    if (StringUtils.hasText(authHeader) && authHeader.startsWith("Bearer ")) {
+      token = authHeader.substring(7);
+    } else {
+      HttpCookie cookie = exchange.getRequest().getCookies().getFirst("accessToken");
+      if (cookie != null) {
+        token = cookie.getValue();
+      }
+    }
+
+    if (!StringUtils.hasText(token)) {
       return chain.filter(exchange);
     }
 
     try {
-      String token = authHeader.substring(7);
       Claims claims = jwtService.decode(token);
       Optional<UserActivity> activity = activityRepository.findById(claims.get("jti").toString());
 
@@ -60,7 +70,6 @@ public class JwtReactiveFilter implements WebFilter {
           .contextWrite(ReactiveSecurityContextHolder.withSecurityContext(Mono.just(context)));
 
     } catch (Exception e) {
-      log.error("Invalid JWT token: {}", e.getMessage());
       exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
       return exchange.getResponse().setComplete();
     }

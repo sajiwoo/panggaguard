@@ -1,20 +1,25 @@
 package dev.sajiwo.panggaguard.service.impl;
 
-import java.util.Arrays;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.registration.ClientRegistration;
+import org.springframework.security.oauth2.client.registration.ReactiveClientRegistrationRepository;
 import org.springframework.stereotype.Service;
 
 import dev.sajiwo.panggaguard.dto.JsonWebToken;
 import dev.sajiwo.panggaguard.dto.request.SignInRequest;
 import dev.sajiwo.panggaguard.dto.response.DataResponse;
 import dev.sajiwo.panggaguard.dto.response.SignInMethodResponse;
-import dev.sajiwo.panggaguard.dto.response.SignInResponse;
 import dev.sajiwo.panggaguard.entity.User;
 import dev.sajiwo.panggaguard.entity.UserActivity;
 import dev.sajiwo.panggaguard.exception.ErrorResponseException;
@@ -34,17 +39,26 @@ import reactor.core.scheduler.Schedulers;
 public class JwtAuthenticationService implements AuthenticationService {
 
   @Value("${add-config.application.domain}")
-  private String AppDomain;
+  private String APP_DOMAIN;
 
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
   private final JwtService jwtService;
   private final UserActivityRepository activityRepository;
+  private final ReactiveClientRegistrationRepository clientRegistrationRepository;
 
+  @SuppressWarnings("unchecked")
   @Override
   public Mono<ResponseEntity<DataResponse<?>>> signInMethod() {
-    SignInMethodResponse google = new SignInMethodResponse("google", "", AppDomain + "/oauth2/authorization/google");
-    return Mono.just(Arrays.asList(google))
+    List<SignInMethodResponse> providers = new ArrayList<>();
+    if (clientRegistrationRepository instanceof Iterable) {
+      for (ClientRegistration registration : (Iterable<ClientRegistration>) clientRegistrationRepository) {
+        SignInMethodResponse provider = new SignInMethodResponse(registration.getClientName(), "",
+            APP_DOMAIN + "/auth/sign-in/" + registration.getClientName().toLowerCase());
+        providers.add(provider);
+      }
+    }
+    return Mono.just(providers)
         .map(DataResponses::ok)
         .map(ResponseEntity::ok);
   }
@@ -72,9 +86,19 @@ public class JwtAuthenticationService implements AuthenticationService {
 
           return Mono.just(jwt);
         })
-        .map(jwt -> new SignInResponse(jwt.getBearerToken(), jwt.getRefreshToken()))
-        .map(DataResponses::ok)
-        .map(ResponseEntity::ok);
+        .map(jwt -> {
+          ResponseCookie accessToken = ResponseCookie
+              .from("accessToken", jwt.getBearerToken())
+              .httpOnly(true)
+              .secure(false)
+              .path("/")
+              .maxAge(Duration.ofHours(5))
+              .build();
+
+          return ResponseEntity.ok()
+              .header(HttpHeaders.SET_COOKIE, accessToken.toString())
+              .body(DataResponses.ok(new Object()));
+        });
   }
 
   @Override

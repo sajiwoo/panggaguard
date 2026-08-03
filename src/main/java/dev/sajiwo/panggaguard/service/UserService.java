@@ -15,4 +15,7 @@ public interface UserService {
   Mono<ResponseEntity<DataResponse<?>>> forgotPassword(ForgotPassword request);
 
   Mono<ResponseEntity<DataResponse<?>>> resetPassword(ResetPasswordRequest request);
+
+  Mono<ResponseEntity<Void>> signInWithOauth2Provider(String provider, String domain, String role, String token);
+
 }
