@@ -38,7 +38,7 @@ public class AuthController {
     return userService.signUp(request);
   }
 
-  @GetMapping(path = "/sign-in/method")
+  @GetMapping(path = "/oauth2/provider")
   public Mono<ResponseEntity<DataResponse<?>>> signInMethod() {
     return authenticationService.signInMethod();
   }
