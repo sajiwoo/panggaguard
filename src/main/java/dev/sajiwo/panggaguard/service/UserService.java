@@ -6,6 +6,7 @@ import dev.sajiwo.panggaguard.dto.request.ForgotPassword;
 import dev.sajiwo.panggaguard.dto.request.ResetPasswordRequest;
 import dev.sajiwo.panggaguard.dto.request.SignUpRequest;
 import dev.sajiwo.panggaguard.dto.response.DataResponse;
+import dev.sajiwo.panggaguard.dto.response.UserProfileResponse;
 import reactor.core.publisher.Mono;
 
 public interface UserService {
@@ -18,4 +19,5 @@ public interface UserService {
 
   Mono<ResponseEntity<Void>> signInWithOauth2Provider(String provider, String domain, String role, String token);
 
+  Mono<ResponseEntity<DataResponse<UserProfileResponse>>> profile();
 }

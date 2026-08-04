@@ -10,6 +10,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -18,6 +19,7 @@ import dev.sajiwo.panggaguard.dto.request.ForgotPassword;
 import dev.sajiwo.panggaguard.dto.request.ResetPasswordRequest;
 import dev.sajiwo.panggaguard.dto.request.SignUpRequest;
 import dev.sajiwo.panggaguard.dto.response.DataResponse;
+import dev.sajiwo.panggaguard.dto.response.UserProfileResponse;
 import dev.sajiwo.panggaguard.entity.Route;
 import dev.sajiwo.panggaguard.entity.User;
 import dev.sajiwo.panggaguard.entity.UserActivity;
@@ -40,14 +42,14 @@ import reactor.core.scheduler.Schedulers;
 @Service
 public class UserServiceImpl implements UserService {
 
-  private final UserRepository userRepository;
+  private final EmailService emailService;
+  private final JwtService jwtService;
+  private final OtpService otpService;
+  private final PasswordEncoder passwordEncoder;
+  private final RouteRepository routeRepository;
   private final UserActivityRepository activityRepository;
   private final UserMapper userMapper;
-  private final PasswordEncoder passwordEncoder;
-  private final EmailService emailService;
-  private final OtpService otpService;
-  private final JwtService jwtService;
-  private final RouteRepository routeRepository;
+  private final UserRepository userRepository;
 
   @Override
   public Mono<ResponseEntity<DataResponse<?>>> signUp(SignUpRequest request) {
@@ -147,6 +149,20 @@ public class UserServiceImpl implements UserService {
         .header(HttpHeaders.SET_COOKIE, roleCookie.toString())
         .header(HttpHeaders.SET_COOKIE, routeCookie.toString())
         .build());
+  }
+
+  @Override
+  public Mono<ResponseEntity<DataResponse<UserProfileResponse>>> profile() {
+    return ReactiveSecurityContextHolder.getContext()
+        .map(context -> context.getAuthentication())
+        .map(authentication -> authentication.getName())
+        .flatMap(email -> Mono.fromCallable(() -> userRepository.findByEmail(email))
+            .subscribeOn(Schedulers.boundedElastic()))
+        .flatMap(Mono::justOrEmpty)
+        .switchIfEmpty(Mono.error(new ErrorResponseException(HttpStatus.UNAUTHORIZED, "User not found")))
+        .map(user -> new UserProfileResponse(user.getFirstName(), user.getLastName(), user.getRole()))
+        .map(DataResponses::ok)
+        .map(ResponseEntity::ok);
   }
 
 }

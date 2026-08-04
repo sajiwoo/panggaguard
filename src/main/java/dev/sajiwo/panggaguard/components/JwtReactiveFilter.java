@@ -63,7 +63,7 @@ public class JwtReactiveFilter implements WebFilter {
       }
 
       UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-          claims.getId(), null, Collections.emptyList());
+          claims.getSubject(), null, Collections.emptyList());
       SecurityContext context = new SecurityContextImpl(auth);
 
       return chain.filter(exchange)
