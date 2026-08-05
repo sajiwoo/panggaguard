@@ -7,8 +7,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
+import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.authentication.HttpStatusServerEntryPoint;
@@ -16,33 +18,46 @@ import org.springframework.security.web.server.util.matcher.ServerWebExchangeMat
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.reactive.CorsConfigurationSource;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
+import org.springframework.web.server.WebFilter;
 
+import dev.sajiwo.panggaguard.components.JwtReactiveSecurityFilter;
 import dev.sajiwo.panggaguard.components.LogoutHandler;
 import dev.sajiwo.panggaguard.repository.UserActivityRepository;
+import dev.sajiwo.panggaguard.service.JwtService;
+import lombok.RequiredArgsConstructor;
 
+@RequiredArgsConstructor
 @Configuration
 @EnableWebFluxSecurity
 @EnableReactiveMethodSecurity
 public class SecurityConfig {
 
+  public static final String[] PUBLIC_APIS = new String[] { "/auth/**", "/oauth2/**", "/ping/public", "/public/**" };
+
   @Value("${add-config.cors.allow-origins}")
   private String origins;
 
-  @Bean
-  SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http, UserActivityRepository activityRepository) {
-    http.oauth2Login(oauth2 -> oauth2.loginPage("/auth/sign-in/method"));
+  private final JwtService jwtService;
+  private final UserActivityRepository activityRepository;
 
-    LogoutHandler logoutHandler = new LogoutHandler(activityRepository);
+  @Bean
+  SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
+
+    http.addFilterAt(jwtReactiveSecurityFilter(), SecurityWebFiltersOrder.AUTHENTICATION);
+
+    http.formLogin(form -> form.disable());
+    http.httpBasic(basic -> basic.disable());
+    http.oauth2Login(Customizer.withDefaults());
 
     http.logout(logout -> logout
         .requiresLogout(ServerWebExchangeMatchers.pathMatchers(HttpMethod.POST, "/auth/sign-out"))
-        .logoutHandler(logoutHandler)
-        .logoutSuccessHandler(logoutHandler));
+        .logoutHandler(logoutHandler())
+        .logoutSuccessHandler(logoutHandler()));
 
     http.cors(cors -> cors.configurationSource(corsConfigurationSource()));
 
     http.authorizeExchange(
-        authz -> authz.pathMatchers("/auth/**", "/oauth2/**", "/ping/public", "/public/**").permitAll().anyExchange()
+        authz -> authz.pathMatchers(PUBLIC_APIS).permitAll().anyExchange()
             .authenticated());
 
     http.exceptionHandling(ex -> ex
@@ -64,6 +79,16 @@ public class SecurityConfig {
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
     source.registerCorsConfiguration("/**", configuration);
     return source;
+  }
+
+  @Bean
+  WebFilter jwtReactiveSecurityFilter() {
+    return new JwtReactiveSecurityFilter(jwtService, activityRepository);
+  }
+
+  @Bean
+  LogoutHandler logoutHandler() {
+    return new LogoutHandler(activityRepository);
   }
 
 }

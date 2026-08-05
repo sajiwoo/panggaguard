@@ -1,5 +1,7 @@
 package dev.sajiwo.panggaguard.exception;
 
+import java.net.ConnectException;
+
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
@@ -41,6 +43,11 @@ public class GlobalReactiveExceptionHandler {
   @ExceptionHandler(ServerWebInputException.class)
   public Mono<ResponseEntity<?>> handleServerWebInputException(ServerWebInputException ex, ServerWebExchange exchange) {
     return Mono.just(ResponseEntity.badRequest().build());
+  }
+
+  @ExceptionHandler(ConnectException.class)
+  public Mono<ResponseEntity<?>> handleServerConnectException(ConnectException ex, ServerWebExchange exchange) {
+    return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build());
   }
 
   @ExceptionHandler(Exception.class)

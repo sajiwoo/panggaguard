@@ -3,15 +3,12 @@ package dev.sajiwo.panggaguard.components;
 import java.util.Collections;
 import java.util.Optional;
 
-import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextImpl;
-import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
@@ -26,10 +23,8 @@ import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
 @Slf4j
-@Component
-@Order(-100)
 @RequiredArgsConstructor
-public class JwtReactiveFilter implements WebFilter {
+public class JwtReactiveSecurityFilter implements WebFilter {
 
   private final JwtService jwtService;
   private final UserActivityRepository activityRepository;
@@ -57,9 +52,8 @@ public class JwtReactiveFilter implements WebFilter {
       Optional<UserActivity> activity = activityRepository.findById(claims.get("jti").toString());
 
       if (activity.isEmpty() || !activity.get().getIsValid()) {
-        log.warn("Invalid JWT");
-        exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-        return exchange.getResponse().setComplete();
+        log.warn("Invalid JWT or Session");
+        return chain.filter(exchange);
       }
 
       UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
@@ -70,8 +64,8 @@ public class JwtReactiveFilter implements WebFilter {
           .contextWrite(ReactiveSecurityContextHolder.withSecurityContext(Mono.just(context)));
 
     } catch (Exception e) {
-      exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-      return exchange.getResponse().setComplete();
+      log.warn("Failed to decode JWT: {}", e.getMessage());
+      return chain.filter(exchange);
     }
   }
 }
