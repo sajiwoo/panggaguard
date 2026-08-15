@@ -21,6 +21,7 @@ create table users (
   email varchar(255) not null,
   "password" varchar(255) not null,
   "role" varchar(255) not null,
+  domain varchar(55) not null,
   created_at timestamp not null default current_timestamp,
   created_by varchar(255),
   updated_at timestamp,

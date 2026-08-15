@@ -12,6 +12,6 @@ public interface AuthenticationService {
 
   Mono<ResponseEntity<DataResponse<?>>> signIn(SignInRequest request);
 
-  Mono<ResponseEntity<DataResponse<?>>> signOut();
+  Mono<ResponseEntity<DataResponse<?>>> signOut(String domain);
 
 }

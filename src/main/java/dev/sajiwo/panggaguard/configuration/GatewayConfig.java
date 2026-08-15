@@ -2,13 +2,17 @@ package dev.sajiwo.panggaguard.configuration;
 
 import java.util.List;
 
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.AntPathMatcher;
+import org.springframework.util.StringUtils;
+import org.springframework.web.server.ServerWebExchange;
 
 import dev.sajiwo.panggaguard.entity.Route;
 import dev.sajiwo.panggaguard.repository.RouteRepository;
@@ -25,6 +29,7 @@ public class GatewayConfig {
 
   private final RouteRepository routeRepository;
 
+  @RefreshScope
   @Bean
   RouteLocator routeLocator(RouteLocatorBuilder routeLocatorBuilder) {
     List<Route> routes = routeRepository.fetchAllApi();
@@ -34,7 +39,12 @@ public class GatewayConfig {
     routes.forEach(config -> {
       log.info("config {}", config);
       builder.route(config.getId().toString(), r -> r
-          .header("x-target-domain", config.getDomain())
+          .predicate(exchange -> {
+            String headerDomain = exchange.getRequest().getHeaders().getFirst("x-target-domain");
+            String queryDomain = exchange.getRequest().getQueryParams().getFirst("x-target-domain");
+            String targetDomain = StringUtils.hasText(headerDomain) ? headerDomain : queryDomain;
+            return config.getDomain().equals(targetDomain);
+          })
           .and()
           .predicate(exchange -> {
             String path = exchange.getRequest().getPath().value();
@@ -46,19 +56,29 @@ public class GatewayConfig {
             return true;
           })
           .filters(f -> f.filter((exchange, chain) -> {
+            boolean hasAuthHeader = exchange.getRequest().getHeaders().containsHeader(HttpHeaders.AUTHORIZATION);
+            HttpCookie cookie = exchange.getRequest().getCookies().getFirst("accessToken");
+            boolean hasAuthCookie = cookie != null;
+            String tokenQuery = exchange.getRequest().getQueryParams().getFirst("token");
+            boolean hasAuthQuery = StringUtils.hasText(tokenQuery);
+
             String path = exchange.getRequest().getPath().value();
             if (!PATH_MATCHER.match("/public/**", path)) {
-              boolean hasAuthHeader = exchange.getRequest().getHeaders().containsHeader(HttpHeaders.AUTHORIZATION);
-              boolean hasAuthCookie = exchange.getRequest().getCookies().containsKey("accessToken");
-
-              if (!hasAuthHeader && !hasAuthCookie) {
+              if (!hasAuthHeader && !hasAuthCookie && !hasAuthQuery) {
                 log.warn("Rejected unauthenticated request to {}", exchange.getRequest().getURI());
                 exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
                 return exchange.getResponse().setComplete();
               }
             }
 
-            return chain.filter(exchange);
+            ServerWebExchange mutatedExchange = exchange;
+            if (!hasAuthHeader && (hasAuthCookie || hasAuthQuery)) {
+              String token = hasAuthCookie ? cookie.getValue() : tokenQuery;
+              mutatedExchange = exchange.mutate().request(
+                  exchange.getRequest().mutate().header(HttpHeaders.AUTHORIZATION, "Bearer " + token).build()).build();
+            }
+
+            return chain.filter(mutatedExchange);
           }))
           .uri(config.getUri()));
     });

@@ -65,13 +65,13 @@ public class JwtAuthenticationService implements AuthenticationService {
 
   @Override
   public Mono<ResponseEntity<DataResponse<?>>> signIn(SignInRequest request) {
-    return Mono.fromCallable(() -> userRepository.findByEmail(request.username()))
+    return Mono.fromCallable(() -> userRepository.findByDomainAndEmail(request.getDomain(), request.getUsername()))
         .subscribeOn(Schedulers.boundedElastic())
         .flatMap(Mono::justOrEmpty)
         .switchIfEmpty(Mono
             .defer(() -> Mono.error(new ErrorResponseException(HttpStatus.UNAUTHORIZED, "Username password salah"))))
         .flatMap(userExists -> {
-          boolean isMatch = passwordEncoder.matches(request.password(), userExists.getPassword());
+          boolean isMatch = passwordEncoder.matches(request.getPassword(), userExists.getPassword());
           if (!isMatch) {
             return Mono.error(new ErrorResponseException(HttpStatus.UNAUTHORIZED, "Username password salah"));
           }
@@ -102,14 +102,14 @@ public class JwtAuthenticationService implements AuthenticationService {
   }
 
   @Override
-  public Mono<ResponseEntity<DataResponse<?>>> signOut() {
+  public Mono<ResponseEntity<DataResponse<?>>> signOut(String domain) {
     return Mono.fromCallable(() -> SecurityContextHolder.getContext().getAuthentication())
         .subscribeOn(Schedulers.boundedElastic())
         .flatMap(Mono::justOrEmpty)
         .switchIfEmpty(
             Mono.defer(() -> Mono.error(new ErrorResponseException(HttpStatus.UNAUTHORIZED, "User not authenticated"))))
         .flatMap(authentication -> {
-          Optional<User> user = userRepository.findByEmail(authentication.getName());
+          Optional<User> user = userRepository.findByDomainAndEmail(domain, authentication.getName());
           if (user.isEmpty()) {
             return Mono.error(new ErrorResponseException(HttpStatus.UNAUTHORIZED, "User not found"));
           }

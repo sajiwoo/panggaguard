@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -34,17 +35,24 @@ public class AuthController {
   private final UserService userService;
 
   @PostMapping(path = "/sign-up")
-  public Mono<ResponseEntity<DataResponse<?>>> signUp(@Valid @RequestBody SignUpRequest request) {
+  public Mono<ResponseEntity<DataResponse<?>>> signUp(
+      @RequestHeader("x-target-domain") String domain,
+      @Valid @RequestBody SignUpRequest request) {
+    request.setDomain(domain);
     return userService.signUp(request);
   }
 
   @GetMapping(path = "/oauth2/provider")
-  public Mono<ResponseEntity<DataResponse<?>>> signInMethod() {
+  public Mono<ResponseEntity<DataResponse<?>>> signInMethod(
+      @RequestHeader("x-target-domain") String domain) {
     return authenticationService.signInMethod();
   }
 
   @PostMapping(path = "/sign-in")
-  public Mono<ResponseEntity<DataResponse<?>>> signIn(@Valid @RequestBody SignInRequest request) {
+  public Mono<ResponseEntity<DataResponse<?>>> signIn(
+      @RequestHeader("x-target-domain") String domain,
+      @Valid @RequestBody SignInRequest request) {
+    request.setDomain(domain);
     return authenticationService.signIn(request);
   }
 
@@ -58,12 +66,18 @@ public class AuthController {
   }
 
   @PostMapping(path = "/forgot-password")
-  public Mono<ResponseEntity<DataResponse<?>>> forgotPasswordRequest(@RequestBody ForgotPassword request) {
+  public Mono<ResponseEntity<DataResponse<?>>> forgotPasswordRequest(
+      @RequestHeader("x-target-domain") String domain,
+      @RequestBody ForgotPassword request) {
+    request.setDomain(domain);
     return userService.forgotPassword(request);
   }
 
   @PostMapping(path = "/reset-password")
-  public Mono<ResponseEntity<DataResponse<?>>> resetPassword(@RequestBody ResetPasswordRequest request) {
+  public Mono<ResponseEntity<DataResponse<?>>> resetPassword(
+      @RequestHeader("x-target-domain") String domain,
+      @RequestBody ResetPasswordRequest request) {
+    request.setDomain(domain);
     return userService.resetPassword(request);
   }
 

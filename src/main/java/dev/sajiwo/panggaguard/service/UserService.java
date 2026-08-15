@@ -19,5 +19,5 @@ public interface UserService {
 
   Mono<ResponseEntity<Void>> signInWithOauth2Provider(String provider, String domain, String role, String token);
 
-  Mono<ResponseEntity<DataResponse<UserProfileResponse>>> profile();
+  Mono<ResponseEntity<DataResponse<UserProfileResponse>>> profile(String domain);
 }

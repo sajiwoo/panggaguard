@@ -38,10 +38,15 @@ public class Oauth2LandingController {
       @CookieValue(name = "x_target_domain") String xTargetDomain,
       @CookieValue(name = "x_role") String role) {
 
+    Oauth2UserRegistration reg = new Oauth2UserRegistration();
+    reg.setUser(user);
+    reg.setDomain(xTargetDomain);
+    reg.setRole(role);
+
     Mono<JsonWebToken> jwtToken = Mono
-        .fromRunnable(() -> oauth2ProviderService.registerOauth2User(new Oauth2UserRegistration(user, role)))
+        .fromRunnable(() -> oauth2ProviderService.registerOauth2User(reg))
         .subscribeOn(Schedulers.boundedElastic())
-        .then(oauth2ProviderService.oauth2Login(user));
+        .then(oauth2ProviderService.oauth2Login(xTargetDomain, user));
 
     Mono<String> route = Mono.fromCallable(() -> routeRepository.findUserAuthUrlRedirection(xTargetDomain, role))
         .subscribeOn(Schedulers.boundedElastic())

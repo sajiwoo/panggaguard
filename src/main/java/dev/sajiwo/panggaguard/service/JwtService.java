@@ -1,5 +1,7 @@
 package dev.sajiwo.panggaguard.service;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -14,6 +16,7 @@ import org.springframework.stereotype.Service;
 import dev.sajiwo.panggaguard.dto.JsonWebToken;
 import dev.sajiwo.panggaguard.entity.User;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 
@@ -35,15 +38,7 @@ public class JwtService {
     claims.put("role", user.getRole());
     String jti = UUID.randomUUID().toString();
 
-    String token = Jwts.builder()
-        .id(jti)
-        .subject(user.getEmail())
-        .claims(claims)
-        .issuedAt(new Date(System.currentTimeMillis()))
-        .expiration(new Date(System.currentTimeMillis() + 1000L * 60 * 60 * expiryTimeHours))
-        .signWith(key)
-        .compact();
-
+    String token = build(jti, claims, user.getEmail()).compact();
     JsonWebToken jwt = new JsonWebToken();
     jwt.setJti(jti);
     jwt.setBearerToken(token);
@@ -54,14 +49,30 @@ public class JwtService {
   public String generateToken(OAuth2User oAuth2User) {
     Map<String, Object> claims = new HashMap<>();
     claims.put("name", oAuth2User.getAttribute("name"));
+    String jti = UUID.randomUUID().toString();
+
+    return build(jti, claims, oAuth2User.getName()).compact();
+  }
+
+  public String extractTokenId(String token) {
+    Claims claims = decode(token);
+    return claims.get("jti").toString();
+  }
+
+  public String extractUsername(String token) {
+    return decode(token).getSubject();
+  }
+
+  public JwtBuilder build(String jti, Map<String, Object> claims, String subject) {
+    LocalDateTime expiration = LocalDateTime.now().plusHours(expiryTimeHours);
     return Jwts.builder()
-        .id(UUID.randomUUID().toString())
-        .subject(oAuth2User.getName())
+        .id(jti)
+        .subject(subject)
         .claims(claims)
-        .issuedAt(new Date(System.currentTimeMillis()))
-        .expiration(new Date(System.currentTimeMillis() + 1000L * 60 * 60 * expiryTimeHours))
-        .signWith(key)
-        .compact();
+        .issuedAt(Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant()))
+        .expiration(Date.from(expiration.atZone(ZoneId.systemDefault()).toInstant()))
+        .signWith(key);
+
   }
 
   public Claims decode(String token) {
@@ -70,24 +81,6 @@ public class JwtService {
         .build()
         .parseSignedClaims(token)
         .getPayload();
-  }
-
-  public String extractTokenId(String token) {
-    Claims claims = Jwts.parser()
-        .verifyWith(key)
-        .build()
-        .parseSignedClaims(token)
-        .getPayload();
-    return claims.get("jti").toString();
-  }
-
-  public String extractUsername(String token) {
-    return Jwts.parser()
-        .verifyWith(key)
-        .build()
-        .parseSignedClaims(token)
-        .getPayload()
-        .getSubject();
   }
 
 }

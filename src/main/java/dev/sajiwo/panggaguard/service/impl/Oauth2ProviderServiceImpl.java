@@ -31,17 +31,20 @@ public class Oauth2ProviderServiceImpl implements Oauth2ProviderService {
 
   @Override
   public void registerOauth2User(Oauth2UserRegistration registration) {
-    Map<String, Object> attrs = registration.user().getAttributes();
+    Map<String, Object> attrs = registration.getUser().getAttributes();
 
     String email = attrs.getOrDefault("email", "").toString();
-    boolean existsByEmail = userRepository.existsByEmail(email);
+    boolean existsByEmail = userRepository.existsByDomainAndEmail(registration.getDomain(), email);
 
     if (!existsByEmail) {
       User newUser = new User();
       newUser.setEmail(attrs.getOrDefault("email", "").toString());
       newUser.setFirstName(attrs.getOrDefault("name", "").toString());
       newUser.setPassword(passwordEncoder.encode("User123"));
-      newUser.setRole(registration.role() != null && !registration.role().isBlank() ? registration.role() : "official");
+      newUser
+          .setRole(
+              registration.getRole() != null && !registration.getRole().isBlank() ? registration.getRole()
+                  : "official");
       newUser = userRepository.save(newUser);
 
       UserActivity newActivity = new UserActivity();
@@ -55,8 +58,9 @@ public class Oauth2ProviderServiceImpl implements Oauth2ProviderService {
   }
 
   @Override
-  public Mono<JsonWebToken> oauth2Login(OAuth2User oauth2User) {
-    return Mono.fromCallable(() -> userRepository.findByEmail(oauth2User.getAttribute("email").toString()))
+  public Mono<JsonWebToken> oauth2Login(String domain, OAuth2User oauth2User) {
+    return Mono
+        .fromCallable(() -> userRepository.findByDomainAndEmail(domain, oauth2User.getAttribute("email").toString()))
         .subscribeOn(Schedulers.boundedElastic()).flatMap(Mono::justOrEmpty)
         .switchIfEmpty(Mono.error(new RuntimeException("user not exists")))
         .flatMap(user -> {

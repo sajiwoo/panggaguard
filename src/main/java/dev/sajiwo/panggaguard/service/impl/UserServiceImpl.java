@@ -53,13 +53,13 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public Mono<ResponseEntity<DataResponse<?>>> signUp(SignUpRequest request) {
-    return Mono.fromCallable(() -> userRepository.findByEmail(request.email()))
+    return Mono.fromCallable(() -> userRepository.findByDomainAndEmail(request.getDomain(), request.getEmail()))
         .subscribeOn(Schedulers.boundedElastic())
         .flatMap(Mono::justOrEmpty)
         .flatMap(user -> Mono.<User>error(new ErrorResponseException(HttpStatus.CONFLICT, "Email sudah terdaftar")))
         .switchIfEmpty(Mono.defer(() -> Mono.fromCallable(() -> {
           User user = userMapper.map(request);
-          user.setPassword(passwordEncoder.encode(request.password()));
+          user.setPassword(passwordEncoder.encode(request.getPassword()));
           return userRepository.save(user);
         }).subscribeOn(Schedulers.boundedElastic())))
         .map(userMapper::map)
@@ -69,7 +69,7 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public Mono<ResponseEntity<DataResponse<?>>> forgotPassword(ForgotPassword request) {
-    return Mono.fromCallable(() -> userRepository.findByEmail(request.email()))
+    return Mono.fromCallable(() -> userRepository.findByDomainAndEmail(request.getDomain(), request.getEmail()))
         .subscribeOn(Schedulers.boundedElastic())
         .flatMap(Mono::justOrEmpty)
         .flatMap(user -> {
@@ -96,17 +96,17 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public Mono<ResponseEntity<DataResponse<?>>> resetPassword(ResetPasswordRequest request) {
-    return otpService.verifyOtp(request.token(), request.email())
+    return otpService.verifyOtp(request.getToken(), request.getEmail())
         .flatMap(isValid -> {
           if (!isValid) {
             return Mono.error(new ErrorResponseException(HttpStatus.BAD_REQUEST, "Invalid or expired OTP token"));
           }
-          return Mono.fromCallable(() -> userRepository.findByEmail(request.email()))
+          return Mono.fromCallable(() -> userRepository.findByDomainAndEmail(request.getDomain(), request.getEmail()))
               .subscribeOn(Schedulers.boundedElastic())
               .flatMap(Mono::justOrEmpty)
               .switchIfEmpty(Mono.error(new ErrorResponseException(HttpStatus.NOT_FOUND, "User not found")))
               .flatMap(user -> {
-                user.setPassword(passwordEncoder.encode(request.password()));
+                user.setPassword(passwordEncoder.encode(request.getPassword()));
                 userRepository.save(user);
                 return Mono.just(DataResponses.ok("Password has been reset successfully"));
               });
@@ -152,11 +152,11 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public Mono<ResponseEntity<DataResponse<UserProfileResponse>>> profile() {
+  public Mono<ResponseEntity<DataResponse<UserProfileResponse>>> profile(String domain) {
     return ReactiveSecurityContextHolder.getContext()
         .map(context -> context.getAuthentication())
         .map(authentication -> authentication.getName())
-        .flatMap(email -> Mono.fromCallable(() -> userRepository.findByEmail(email))
+        .flatMap(email -> Mono.fromCallable(() -> userRepository.findByDomainAndEmail(domain, email))
             .subscribeOn(Schedulers.boundedElastic()))
         .flatMap(Mono::justOrEmpty)
         .switchIfEmpty(Mono.error(new ErrorResponseException(HttpStatus.UNAUTHORIZED, "User not found")))

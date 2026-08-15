@@ -40,6 +40,9 @@ public class JwtReactiveSecurityFilter implements WebFilter {
       HttpCookie cookie = exchange.getRequest().getCookies().getFirst("accessToken");
       if (cookie != null) {
         token = cookie.getValue();
+      } else {
+        // Fallback for WebSockets since they cannot send headers
+        token = exchange.getRequest().getQueryParams().getFirst("token");
       }
     }
 

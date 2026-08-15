@@ -10,6 +10,6 @@ public interface Oauth2ProviderService {
 
   void registerOauth2User(Oauth2UserRegistration registration);
 
-  Mono<JsonWebToken> oauth2Login(OAuth2User oauth2User);
+  Mono<JsonWebToken> oauth2Login(String domain, OAuth2User oauth2User);
 
 }

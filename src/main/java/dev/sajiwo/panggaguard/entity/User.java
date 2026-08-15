@@ -43,4 +43,7 @@ public class User extends AuditEntity<String, LocalDateTime> {
   @EqualsAndHashCode.Exclude
   private boolean isNew = true;
 
+  @Column(name = "DOMAIN")
+  private String domain;
+
 }

@@ -26,6 +26,7 @@ repositories {
 extra["springCloudVersion"] = "2025.1.2"
 
 dependencies {
+    implementation("org.springframework.cloud:spring-cloud-starter")
     implementation("org.springframework.boot:spring-boot-micrometer-tracing-brave")
     implementation("io.micrometer:micrometer-tracing-bridge-brave")
     // Structured Logging & JSON Encoders

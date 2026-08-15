@@ -10,7 +10,7 @@ import dev.sajiwo.panggaguard.entity.User;
 @Repository
 public interface UserRepository extends JpaRepository<User, String> {
 
-  Optional<User> findByEmail(String email);
+  Optional<User> findByDomainAndEmail(String domain, String email);
 
-  boolean existsByEmail(String email);
+  boolean existsByDomainAndEmail(String domain, String email);
 }

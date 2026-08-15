@@ -2,6 +2,16 @@ package dev.sajiwo.panggaguard.dto.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
-public record SignInRequest(@NotBlank @Email String username, @NotBlank String password) {
+@Data
+@EqualsAndHashCode(callSuper = true)
+public class SignInRequest extends InternalBaseRequest {
+  @NotBlank
+  @Email
+  private String username;
+
+  @NotBlank
+  private String password;
 }
